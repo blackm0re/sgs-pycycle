@@ -72,8 +72,8 @@ directory.
    ```
 
 This latest method also eliminates the need for `setuptools`, but will not add
-the executable sgs_pycycle. Still the CLI interface can be accessed as
-shown bellow.
+the dedicated executable `sgs_pycycle`. Still the CLI interface can be accessed
+as shown bellow.
 
 Check if everything works by typing:
 
@@ -148,6 +148,13 @@ will produce the same content, only order the stations by name.
 All station attributes can be used for sorting, given that string attributes
 will be sorted as strings (f.i. '98' > '1654').
 
+   ```bash
+   python -m sgs_pycycle -l -c user-testapp
+   sgs_pycycle -l -c user-testapp
+   ```
+
+will call the API using 'user-testapp' as Client-Identifier.
+
 
 ### Using the library directly
 
@@ -200,7 +207,9 @@ Incomplete list of possible future improvements:
 
 - Better error reporting and sanity checking
 
-- Formatting output for CLI (header, even spacing, etc.)
+- Formatting output for CLI (header, even spacing, etc...)
+
+- More CLI parameters (socket timeout, SSL context, etc...)
 
 
 ## Author
