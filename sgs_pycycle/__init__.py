@@ -25,6 +25,11 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """A pure Python client and object-mapper for the Oslo Bysykkel API"""
 
+from .client import (Client,
+                     ClientConnectionError,
+                     ClientDataError,
+                     ClientError)
+from .models import Station, StationCollection
 
 __author__ = 'Simeon Simeonov'
 __version__ = '1.0.0'
@@ -41,4 +46,9 @@ def int_or_str(value):
 
 VERSION = tuple(map(int_or_str, __version__.split('.')))
 
-__all__ = []
+__all__ = ['Client',
+           'ClientConnectionError',
+           'ClientDataError',
+           'ClientError',
+           'Station',
+           'StationCollection']

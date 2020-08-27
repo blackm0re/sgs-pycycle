@@ -25,6 +25,161 @@
 # THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """A pure Python client for the Oslo Bysykkel API"""
 
+import json
+import urllib.error
+import urllib.request
+
+from sgs_pycycle.models import Station, StationCollection
+
+
+class ClientConnectionError(Exception):
+    """
+    Client-connection error exception
+
+    Encapsulates all errors related to network problems, wrong URLs, SSL, etc..
+    """
+
+
+class ClientDataError(Exception):
+    """
+    Client data error exception
+
+    Reaised when the client is not able to handle the response-data
+    """
+
+
+class ClientError(Exception):
+    """
+    Client error exception
+
+    Raised when the client detects wrong input or when unexpected condition
+    arises
+    """
+
 
 class Client:
     """The Client-class encapsulating the client functionality"""
+
+    def __init__(self, autodiscovery_url, identifier='sgs-pycycle'):
+        """
+        Constructs a Client object.
+
+        :param autodiscovery_url: The URL of the autodiscovery endpoint
+        :type autodiscovery_url: str
+
+        :param identifier: The Client-Identifier string required by the API
+        :type identifier: str
+        """
+        # Additional values like socket timeout, SSL-context, etc.. can also
+        # be provided either through external configuration resource or through
+        # parameters (or both).
+
+        # some explicit type checking
+        if (
+                not isinstance(autodiscovery_url, str) or
+                not isinstance(identifier, str)
+        ):
+            raise ClientError(
+                'autodiscovery_url and identifier must be of type str')
+        self._autodiscovery_url = autodiscovery_url
+        self._identifier = identifier
+
+    def get_station_collection(self):
+        """
+        Returns StationCollection object corresponding to the API data.
+
+        Once fetched the data can be sorted and manipulated using the
+        StationCollection module.
+
+        :return: The StationCollection object corresponding to the API data
+        :rtype: sgs_pycycle.StationCollection
+        """
+        try:
+            # maps the ID to a newly created Station-object
+            station_id_mapper = {}
+
+            all_data = self._fetch_all_from_API()
+            station_collection = StationCollection()
+            # we start by going through all station-status data and
+            # creating Station objects
+            for sdata in all_data['station_status']['data']['stations']:
+                station_id_mapper[sdata['station_id']] = Station(**sdata)
+            for sdata in all_data['station_information']['data']['stations']:
+                if sdata['station_id'] not in station_id_mapper:
+                    raise ClientDataError(f"station_id {sdata['station_id']} "
+                                          "not found in station_status")
+                station_id_mapper[
+                    sdata['station_id']].set_station_information_data(**sdata)
+                station_collection.append_station(
+                    station_id_mapper[sdata['station_id']])
+            return station_collection
+        except (ClientConnectionError, ClientDataError, ClientError):
+            # re-raise the already identified exceptions
+            raise
+        except Exception as err:
+            raise ClientError(str(err))
+
+    def _fetch_all_endpoints(self):
+        """
+        Fetches all endpoints and returns a dict corresponding to
+        the JSON content returned by the API
+
+        :return: All endpoints found in self._autodiscovery_url
+        :rtype: dict
+        """
+        # It is possible to call this method upon the initialization of the
+        # Client-object and make the object cache the reponse for better
+        # performance, assuming that autodiscovery data is not changed often
+        try:
+            req = urllib.request.Request(
+                self._autodiscovery_url,
+                headers={'Client-Identifier': self._identifier})
+            response = urllib.request.urlopen(req)
+            if response.code != 200:
+                raise ClientConnectionError('API did not return 200')
+            # API-encoding can be moved to an external configuration resource
+            return json.loads(response.read().decode('utf-8'))
+        except urllib.error.HTTPError as err:
+            raise ClientConnectionError(str(err))
+        except json.decoder.JSONDecodeError as err:
+            raise ClientDataError(str(err))
+        except Exception as err:
+            raise ClientError(str(err))
+
+    def _fetch_all_from_API(self):
+        """
+        Fetches raw (JSON) data from each endpoint presented in the
+        self._autodiscovery_url
+
+        :return: Dictionary with endpoint-name as key and payload dict as value
+        :rtype: dict
+        """
+        try:
+            endpoint_data = {}
+            endpoints_dict = self._fetch_all_endpoints()
+            # the 'last_updated' attribute can be used to implement caching
+            # instead of fetching all data everytime this method is called
+            for endpoint in endpoints_dict['data']['nb']['feeds']:
+                req = urllib.request.Request(
+                    endpoint['url'],
+                    headers={'Client-Identifier': self._identifier})
+                response = urllib.request.urlopen(req)
+                if response.code != 200:
+                    raise ClientConnectionError('API did not return 200')
+                endpoint_data[endpoint['name']] = (
+                    json.loads(response.read().decode('utf-8')))
+            return endpoint_data
+        except (ClientConnectionError, ClientDataError, ClientError):
+            # re-raise the already identified exceptions
+            raise
+        except urllib.error.HTTPError as err:
+            raise ClientConnectionError(str(err))
+        except json.decoder.JSONDecodeError as err:
+            raise ClientDataError(str(err))
+        except KeyError:
+            # JSONPATH library can be used to move the JSON structure into
+            # an external configuration resource
+            raise ClientDataError(
+                'Modified or corrupt JSON structure in autodiscovery')
+        except Exception as err:
+            raise ClientError(str(err))

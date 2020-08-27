@@ -36,7 +36,7 @@ import sgs_pycycle
 
 
 def eprint(*arg, **kwargs):
-    """stdderr print wrapper"""
+    """stderr print wrapper"""
     print(*arg, file=sys.stderr, flush=True, **kwargs)
 
 
@@ -47,12 +47,34 @@ def main(args=None):
         epilog=(f'%(prog)s {sgs_pycycle.__version__} by Simeon Simeonov '
                 '(sgs @ Freenode)'),
         description='The following options are available')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        '-l', '--list-all-stations',
+        action='store_true',
+        dest='list_all_stations',
+        default=False,
+        help=('Lists all active stations with id, name, '
+              'number of docks available, number of bikes available'))
+    parser.add_argument(
+        '-k', '--sort-by-key',
+        type=str,
+        dest='sort_by_key',
+        default='',
+        help='Sorts the stations by the provided key')
     parser.add_argument(
         '-v', '--version',
         action='version',
         version=f'%(prog)s {sgs_pycycle.__version__}',
         help='display program-version and exit')
     args = parser.parse_args(args)
+    if args.list_all_stations:
+        client = sgs_pycycle.client.Client(
+            'http://simeon.simeonov.no/bysykkel/gbfs.json')
+        collection = client.get_station_collection()
+        if args.sort_by_key:
+            collection.sort_by_key(args.sort_by_key)
+        for station in collection:
+            print(station)
 
 
 if __name__ == '__main__':
