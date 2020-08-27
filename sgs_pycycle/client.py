@@ -60,15 +60,17 @@ class ClientError(Exception):
 class Client:
     """The Client-class encapsulating the client functionality"""
 
-    def __init__(self, autodiscovery_url, identifier='sgs-pycycle'):
+    def __init__(self, auto_discovery_url, identifier='sgs-pycycle'):
         """
         Constructs a Client object.
 
-        :param autodiscovery_url: The URL of the autodiscovery endpoint
-        :type autodiscovery_url: str
+        :param auto_discovery_url: The URL of the auto discovery endpoint
+        :type auto_discovery_url: str
 
         :param identifier: The Client-Identifier string required by the API
         :type identifier: str
+
+        :raises sgs_pycycle.ClientError: If the input does not validate
         """
         # Additional values like socket timeout, SSL-context, etc.. can also
         # be provided either through external configuration resource or through
@@ -76,12 +78,12 @@ class Client:
 
         # some explicit type checking
         if (
-                not isinstance(autodiscovery_url, str) or
+                not isinstance(auto_discovery_url, str) or
                 not isinstance(identifier, str)
         ):
             raise ClientError(
-                'autodiscovery_url and identifier must be of type str')
-        self._autodiscovery_url = autodiscovery_url
+                'auto_discovery_url and identifier must be of type str')
+        self._auto_discovery_url = auto_discovery_url
         self._identifier = identifier
 
     def get_station_collection(self):
@@ -90,6 +92,13 @@ class Client:
 
         Once fetched the data can be sorted and manipulated using the
         StationCollection module.
+
+        :raises sgs_pycycle.ClientConnectionError: For connection and network
+                                                   related errors
+
+        :raises sgs_pycycle.ClientDataError: For content / payload errors
+
+        :raises sgs_pycycle.ClientError: For all other errors
 
         :return: The StationCollection object corresponding to the API data
         :rtype: sgs_pycycle.StationCollection
@@ -124,22 +133,22 @@ class Client:
         Fetches all endpoints and returns a dict corresponding to
         the JSON content returned by the API
 
-        :return: All endpoints found in self._autodiscovery_url
+        :return: All endpoints found in self._auto_discovery_url
         :rtype: dict
         """
         # It is possible to call this method upon the initialization of the
         # Client-object and make the object cache the reponse for better
-        # performance, assuming that autodiscovery data is not changed often
+        # performance, assuming that auto discovery data is not changed often
         try:
             req = urllib.request.Request(
-                self._autodiscovery_url,
+                self._auto_discovery_url,
                 headers={'Client-Identifier': self._identifier})
             response = urllib.request.urlopen(req)
             if response.code != 200:
                 raise ClientConnectionError('API did not return 200')
             # API-encoding can be moved to an external configuration resource
             return json.loads(response.read().decode('utf-8'))
-        except urllib.error.HTTPError as err:
+        except (urllib.error.HTTPError, urllib.error.URLError) as err:
             raise ClientConnectionError(str(err))
         except json.decoder.JSONDecodeError as err:
             raise ClientDataError(str(err))
@@ -149,7 +158,7 @@ class Client:
     def _fetch_all_from_API(self):
         """
         Fetches raw (JSON) data from each endpoint presented in the
-        self._autodiscovery_url
+        self._auto_discovery_url
 
         :return: Dictionary with endpoint-name as key and payload dict as value
         :rtype: dict
@@ -172,7 +181,7 @@ class Client:
         except (ClientConnectionError, ClientDataError, ClientError):
             # re-raise the already identified exceptions
             raise
-        except urllib.error.HTTPError as err:
+        except (urllib.error.HTTPError, urllib.error.URLError) as err:
             raise ClientConnectionError(str(err))
         except json.decoder.JSONDecodeError as err:
             raise ClientDataError(str(err))
@@ -180,6 +189,6 @@ class Client:
             # JSONPATH library can be used to move the JSON structure into
             # an external configuration resource
             raise ClientDataError(
-                'Modified or corrupt JSON structure in autodiscovery')
+                'Modified or corrupt JSON structure in auto discovery')
         except Exception as err:
             raise ClientError(str(err))

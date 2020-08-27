@@ -56,25 +56,51 @@ def main(args=None):
         help=('Lists all active stations with id, name, '
               'number of docks available, number of bikes available'))
     parser.add_argument(
+        '-a', '--auto-discovery-url',
+        metavar='<URL>',
+        type=str,
+        dest='auto_discovery_url',
+        default='https://gbfs.urbansharing.com/oslobysykkel.no/gbfs.json',
+        help=('The URL of the auto discovery resource (default: '
+              'https://gbfs.urbansharing.com/oslobysykkel.no/gbfs.json)'))
+    parser.add_argument(
+        '-c', '--client-identifier',
+        metavar='<identifier>',
+        type=str,
+        dest='client_identifier',
+        default='sgs-pycycle',
+        help=('The value of the "Client-Identifier" header '
+              '(default: sgs-pycycle)'))
+    parser.add_argument(
         '-k', '--sort-by-key',
+        metavar='<key>',
         type=str,
         dest='sort_by_key',
         default='',
-        help='Sorts the stations by the provided key')
+        help='Sorts the stations by the provided key (default: no sorting)')
     parser.add_argument(
         '-v', '--version',
         action='version',
         version=f'%(prog)s {sgs_pycycle.__version__}',
         help='display program-version and exit')
     args = parser.parse_args(args)
-    if args.list_all_stations:
-        client = sgs_pycycle.client.Client(
-            'http://simeon.simeonov.no/bysykkel/gbfs.json')
-        collection = client.get_station_collection()
-        if args.sort_by_key:
-            collection.sort_by_key(args.sort_by_key)
-        for station in collection:
-            print(station)
+    try:
+        if args.list_all_stations:
+            client = sgs_pycycle.client.Client(args.auto_discovery_url,
+                                               args.client_identifier)
+            collection = client.get_station_collection()
+            if args.sort_by_key:
+                collection.sort_by_key(args.sort_by_key)
+            for station in collection:
+                print(station)
+    except sgs_pycycle.client.ClientConnectionError as err:
+        eprint(f'Client connection error: {err}')
+    except sgs_pycycle.client.ClientDataError as err:
+        eprint(f'Data error: {err}')
+    except sgs_pycycle.client.ClientError as err:
+        eprint(f'Client error: {err}')
+    except Exception as err:
+        eprint(f'Unhandled exception: {err}')
 
 
 if __name__ == '__main__':

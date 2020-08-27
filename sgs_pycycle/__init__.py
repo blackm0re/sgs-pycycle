@@ -31,6 +31,7 @@ from .client import (Client,
                      ClientError)
 from .models import Station, StationCollection
 
+
 __author__ = 'Simeon Simeonov'
 __version__ = '1.0.0'
 __license__ = 'BSD 2-Clause'
