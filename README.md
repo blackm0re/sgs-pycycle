@@ -51,7 +51,7 @@ The easiest way is to install the package directly from pypi.org
 ### Manual
 
    ```bash
-   git clone https://github.com/sgs-test/sgs-pycycle.git
+   git clone https://github.com/blackm0re/sgs-pycycle.git
    ```
 
 One can simply install in a virtual-environment or as a privileged user by:
@@ -217,10 +217,10 @@ Incomplete list of possible future improvements:
 Simeon Simeonov - sgs @ Freenode
 
 
-## [License](https://github.com/sgs-test/sgs-pycycle/blob/master/LICENSE)
+## [License](https://github.com/blackm0re/sgs-pycycle/blob/master/LICENSE)
 
 Copyright (c) 2020, Simeon Simeonov
 All rights reserved.
 
-[Licensed](https://github.com/sgs-test/sgs-pycycle/blob/master/LICENSE) under the BSD 2-clause.
+[Licensed](https://github.com/blackm0re/sgs-pycycle/blob/master/LICENSE) under the BSD 2-clause.
 SPDX-License-Identifier: BSD-2-Clause-FreeBSD

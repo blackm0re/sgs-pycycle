@@ -18,7 +18,7 @@ setuptools.setup(
     license=sgs_pycycle.__license__,
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/sgs-test/sgs-pycycle',
+    url='https://github.com/blackm0re/sgs-pycycle',
     packages=setuptools.find_packages(),
     exclude_package_data={'': ['.gitignore']},
     entry_points={
@@ -40,8 +40,8 @@ setuptools.setup(
     ],
     keywords='oslo bikes bicycle api',
     project_urls={
-        'Bug Reports': 'https://github.com/sgs-test/sgs-pycycle/issues',
-        'Source': 'https://github.com/sgs-test/sgs-pycycle'
+        'Bug Reports': 'https://github.com/blackm0re/sgs-pycycle/issues',
+        'Source': 'https://github.com/blackm0re/sgs-pycycle'
     },
     python_requires='>=3.6',
 )
