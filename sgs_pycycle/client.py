@@ -126,7 +126,7 @@ class Client:
             # re-raise the already identified exceptions
             raise
         except Exception as err:
-            raise ClientError(str(err))
+            raise ClientError(str(err)) from None
 
     def _fetch_all_endpoints(self):
         """
@@ -149,11 +149,11 @@ class Client:
             # API-encoding can be moved to an external configuration resource
             return json.loads(response.read().decode('utf-8'))
         except (urllib.error.HTTPError, urllib.error.URLError) as err:
-            raise ClientConnectionError(str(err))
+            raise ClientConnectionError(str(err)) from err
         except json.decoder.JSONDecodeError as err:
-            raise ClientDataError(str(err))
+            raise ClientDataError(str(err)) from err
         except Exception as err:
-            raise ClientError(str(err))
+            raise ClientError(str(err)) from None
 
     def _fetch_all_from_API(self):
         """
@@ -182,13 +182,14 @@ class Client:
             # re-raise the already identified exceptions
             raise
         except (urllib.error.HTTPError, urllib.error.URLError) as err:
-            raise ClientConnectionError(str(err))
+            raise ClientConnectionError(str(err)) from err
         except json.decoder.JSONDecodeError as err:
-            raise ClientDataError(str(err))
+            raise ClientDataError(str(err)) from err
         except KeyError:
             # JSONPATH library can be used to move the JSON structure into
             # an external configuration resource
             raise ClientDataError(
-                'Modified or corrupt JSON structure in auto discovery')
+                'Modified or corrupt JSON '
+                'structure in auto discovery') from None
         except Exception as err:
-            raise ClientError(str(err))
+            raise ClientError(str(err)) from None
